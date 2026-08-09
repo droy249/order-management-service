@@ -1,0 +1,78 @@
+name: Java Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      # Spin up a live test database container automatically inside the runner
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: orders_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: your_secure_password
+        ports:
+          - 5123:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Setup Enterprise Java Runtime
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build Project & Run Tests with Maven
+      env:
+        # Mocking or providing dummy environment variables so context compilation doesn't crash
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5123/orders_db
+        SPRING_DATASOURCE_USERNAME: postgres
+        SPRING_DATASOURCE_PASSWORD: your_secure_password
+        ANTHROPIC_API_KEY: sk-ant-mock-key-for-compilation-testing
+      run: mvn clean package
+
+    - name: Upload Compiled Jar Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: order-management-service-jar
+        path: target/*.jar
+
+  docker-package:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Download Built Jar Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: order-management-service-jar
+        path: target/
+
+    - name: Set up Docker Buildx
+      uses: actions/setup-docker-action@v1
+      with:
+        daemon_off: false
+
+    - name: Build Local Container Image Verification
+      run: |
+        docker build -t order-management-service:latest .
+        docker images
