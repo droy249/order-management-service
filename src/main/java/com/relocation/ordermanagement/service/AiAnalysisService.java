@@ -12,6 +12,7 @@ public class AiAnalysisService {
     private final OrderAnalyzer orderAnalyzer;
 
     // Internal structural interface for LangChain4j extraction
+        // Internal structural interface for LangChain4j extraction
     interface OrderAnalyzer {
         @UserMessage("""
             Analyze the following e-commerce order details.
@@ -21,9 +22,16 @@ public class AiAnalysisService {
             
             Provide a structured analysis classifying the customer sentiment (POSITIVE/NEUTRAL/NEGATIVE), 
             if the order notes show patterns of potential fraud/scams (true/false), and a suggested department category.
+            
+            CRITICAL INTERFACE REQUIREMENT:
+            You must reply STRICTLY with a single, raw, valid JSON object. 
+            Do NOT wrap the JSON inside markdown code blocks (no ``` or ```json). 
+            Do NOT include any conversational preamble, greetings, introductions, or trailing text. 
+            Output ONLY the raw bracketed JSON string.
             """)
         OrderAnalysisResponse analyzeOrder(String productName, Double price, String customerNotes);
     }
+
 
     public AiAnalysisService(ChatLanguageModel chatLanguageModel) {
         // Instruct LangChain4j to implement our structural parsing dynamically
