@@ -2,7 +2,7 @@
 # Production Smoke Test Script
 
 # 1. Change this to your live Render URL
-API_URL="https://onrender.com"
+API_URL="https://order-management-service-k2ek.onrender.com/api/orders"
 
 echo "🚀 Starting Production Smoke Test..."
 echo "Target URL: $API_URL"
